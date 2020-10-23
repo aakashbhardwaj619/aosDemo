@@ -1,0 +1,65 @@
+name: SPFx CI CD
+
+on:
+  push:
+    branches: [ demo ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.1.2
+        with:
+          node-version: 10.x
+      
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build solution
+        run: gulp build
+        
+      - name: Execute Tests
+        run: npm test
+        
+      - name: Bundle and package solution
+        run: |
+          gulp bundle --ship
+          gulp package-solution --ship
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: packageFile
+          path: sharepoint/solution/test-list-items.sppkg
+    
+  deploy:
+    
+    runs-on: windows-latest
+    needs: [build]
+    
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v2.0.5
+        with:
+          name: packageFile
+    
+      
+      - name: PnP PowerShell Deploy App
+        uses: aakashbhardwaj619/action-pnp-powershell-deploy@v1.0.0
+        with:
+          # URL of the SharePoint Site
+          SHAREPOINT_SITE_URL: https://in8aakbh.sharepoint.com/sites/UHSD2
+          # Username of the admin
+          ADMIN_USERNAME: ${{ secrets.ADMINUSERNAME }}
+          # Password of the admin
+          ADMIN_PASSWORD: ${{ secrets.ADMINPASSWORD }}
+          # Relative path of the app in your repo
+          APP_FILE_PATH: test-list-items.sppkg
+          # True or false. Set to overwrite the existing package file. Default is false
+          OVERWRITE: true
+          # Scope of the app catalog: Tenant|Site. Default is Tenant
+          SCOPE: Site
