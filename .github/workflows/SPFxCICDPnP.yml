@@ -2,7 +2,7 @@ name: SPFx CI CD
 
 on:
   push:
-    branches: [ demo ]
+    branches: [ demoPnP ]
 
 jobs:
   build:
